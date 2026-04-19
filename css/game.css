@@ -1,0 +1,169 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: #ffffff;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.game-container {
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+    max-width: 900px;
+    width: 100%;
+}
+
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e94560;
+}
+
+.game-header h1 {
+    color: #e94560;
+    font-size: 2.5rem;
+    text-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
+}
+
+.game-stats {
+    display: flex;
+    gap: 30px;
+    font-size: 1.1rem;
+}
+
+.blade-counts {
+    display: flex;
+    gap: 15px;
+}
+
+.blade {
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+.blade.red {
+    background: rgba(233, 69, 96, 0.3);
+    color: #ff6b81;
+}
+
+.blade.yellow {
+    background: rgba(255, 193, 7, 0.3);
+    color: #ffd166;
+}
+
+.blade.blue {
+    background: rgba(30, 144, 255, 0.3);
+    color: #70d6ff;
+}
+
+.enemy-count {
+    background: rgba(108, 117, 125, 0.3);
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+.game-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+#gameCanvas {
+    border: 3px solid #e94560;
+    border-radius: 8px;
+    background: #0f3460;
+    box-shadow: 0 0 20px rgba(233, 69, 96, 0.3);
+}
+
+.game-controls {
+    text-align: center;
+    color: #a9b7c6;
+    line-height: 1.6;
+}
+
+.game-controls p {
+    margin: 5px 0;
+}
+
+.game-over {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+.game-over h2 {
+    color: #e94560;
+    font-size: 3rem;
+    margin-bottom: 20px;
+}
+
+.game-over p {
+    font-size: 1.5rem;
+    margin-bottom: 30px;
+}
+
+#restart-btn {
+    background: #e94560;
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    font-size: 1.2rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+#restart-btn:hover {
+    background: #ff6b81;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .game-header {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .game-stats {
+        flex-direction: column;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .blade-counts {
+        gap: 10px;
+    }
+
+    #gameCanvas {
+        width: 100%;
+        max-width: 400px;
+        height: auto;
+    }
+}
