@@ -26,6 +26,27 @@ class BladeBattleGame {
 
         // Pre-populate the pool
         this.prePopulatePool();
+
+        // Game configuration
+        this.config = {
+            worldWidth: 800,
+            worldHeight: 600,
+            bladeSpawnRate: 3000, // 3 seconds
+            npcSpawnRate: 10000,  // 10 seconds
+            maxNPCs: 5,
+            combatThreshold: 1.2,
+            colorAdvantage: {
+                red: 1.5,
+                yellow: 1.2,
+                blue: 1.0
+            }
+        };
+
+        // Spawn timers
+        this.lastBladeSpawn = 0;
+        this.lastNPCSpawn = 0;
+
+        this.init();
     }
 
     prePopulatePool() {
@@ -55,28 +76,6 @@ class BladeBattleGame {
             this.bladePool.push(blade);
         }
         // If pool is full, let the blade be garbage collected
-    }
-
-        // Game configuration
-        this.config = {
-            worldWidth: 800,
-            worldHeight: 600,
-            bladeSpawnRate: 3000, // 3 seconds
-            npcSpawnRate: 10000,  // 10 seconds
-            maxNPCs: 5,
-            combatThreshold: 1.2,
-            colorAdvantage: {
-                red: 1.5,
-                yellow: 1.2,
-                blue: 1.0
-            }
-        };
-
-        // Spawn timers
-        this.lastBladeSpawn = 0;
-        this.lastNPCSpawn = 0;
-
-        this.init();
     }
 
     init() {
@@ -334,6 +333,11 @@ class BladeBattleGame {
         this.gameState = 'playing';
         this.npcs = [];
         this.blades = [];
+
+        // Dispose of old player if exists
+        if (this.player && this.player.dispose) {
+            this.player.dispose();
+        }
 
         // Reinitialize player
         this.player = new PlayerCharacter(

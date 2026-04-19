@@ -73,44 +73,112 @@ class NPC {
 
         this.lastBladeScanTime = currentTime;
 
-        // Find best blade to target (up to 5 nearest blades)
-        let bestBlade = null;
-        let bestScore = -Infinity;
-        let bladesChecked = 0;
+        // Find and score nearest blades
+        const scoredBlades = this.findAndScoreNearestBlades(blades, player, 5);
 
-        for (const blade of blades) {
-            if (bladesChecked >= 5) break; // Limit to 5 nearest for performance
+        if (scoredBlades.length === 0) {
+            this.targetBlade = null;
+            return;
+        }
 
+        // Choose best blade based on strategic considerations
+        this.targetBlade = this.chooseBestBlade(scoredBlades, player);
+    }
+
+    findAndScoreNearestBlades(blades, player, maxBlades) {
+        // Get all blades within range and calculate their distances
+        const bladesInRange = blades.map(blade => {
             const dx = blade.x - this.x;
             const dy = blade.y - this.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
+            return { blade, distance };
+        }).filter(blade => blade.distance <= 300);
 
-            // Skip if too far
-            if (distance > 300) continue;
+        // Sort by distance and take nearest ones
+        bladesInRange.sort((a, b) => a.distance - b.distance);
+        const nearestBlades = bladesInRange.slice(0, maxBlades);
 
-            bladesChecked++;
+        // Score each blade
+        return nearestBlades.map(item => {
+            const score = this.calculateBladeScore(item.blade, item.distance, player);
+            return { ...item, score };
+        });
+    }
 
-            // Calculate blade score
-            const value = this.colorAdvantage ? this.colorAdvantage[blade.color] || 1 : 1;
-            const proximity = 1 / (1 + distance / 50);
+    calculateBladeScore(blade, distance, player) {
+        let score = 0;
 
-            // Safety factor (compare NPC vs player time to reach blade)
-            const npcTime = distance / (this.speed + 0.001);
-            const playerDx = blade.x - player.x;
-            const playerDy = blade.y - player.y;
-            const playerDistance = Math.sqrt(playerDx * playerDx + playerDy * playerDy);
-            const playerTime = playerDistance / (player.speed + 0.001);
-            const safety = npcTime < playerTime - 0.5 ? 1 : 0.3;
+        // Base value based on color advantage
+        const colorValue = this.colorAdvantage ? this.colorAdvantage[blade.color] || 1 : 1;
+        score += colorValue * 30;
 
-            const score = value * proximity * safety;
+        // Proximity factor (closer is better)
+        const proximity = 1 / (1 + distance / 50);
+        score += proximity * 40;
 
-            if (score > bestScore) {
-                bestScore = score;
-                bestBlade = blade;
+        // Strategic color preference based on current inventory
+        if (this.blades.red < 2 && blade.color === 'red') {
+            score += 25; // High priority for red blades when we have few
+        } else if (this.blades.yellow < 3 && blade.color === 'yellow') {
+            score += 15; // Medium priority for yellow blades
+        } else if (this.blades.blue < 5 && blade.color === 'blue') {
+            score += 10; // Lower priority for blue blades
+        }
+
+        // Safety consideration (avoid blades that player is closer to)
+        const playerDx = blade.x - player.x;
+        const playerDy = blade.y - player.y;
+        const playerDistance = Math.sqrt(playerDx * playerDx + playerDy * playerDy);
+        const npcTime = distance / (this.speed + 0.001);
+        const playerTime = playerDistance / (player.speed + 0.001);
+
+        if (npcTime < playerTime - 0.5) {
+            score += 20; // Safe - NPC can get there first
+        } else if (npcTime > playerTime + 0.5) {
+            score -= 15; // Dangerous - player likely to get there first
+        }
+
+        // Avoid blades that would lead NPC into player's path
+        const angleToBlade = Math.atan2(blade.y - this.y, blade.x - this.x);
+        const angleToPlayer = Math.atan2(player.y - this.y, player.x - this.x);
+        const angleDiff = Math.abs(angleToBlade - angleToPlayer);
+
+        if (angleDiff < Math.PI / 6 && playerDistance < 150) { // 30 degrees and player is close
+            score -= 10; // Reduce score for blades that lead toward player
+        }
+
+        return score;
+    }
+
+    chooseBestBlade(scoredBlades, player) {
+        // Sort by score (highest first)
+        scoredBlades.sort((a, b) => b.score - a.score);
+
+        // If multiple blades have similar scores, consider additional factors
+        if (scoredBlades.length > 1) {
+            const topScore = scoredBlades[0].score;
+            const similarBlades = scoredBlades.filter(blade =>
+                blade.score >= topScore * 0.8 // Within 20% of top score
+            );
+
+            if (similarBlades.length > 1) {
+                // Among similar-scoring blades, prefer the one farthest from player
+                similarBlades.sort((a, b) => {
+                    const playerDistA = Math.sqrt(
+                        Math.pow(a.blade.x - player.x, 2) +
+                        Math.pow(a.blade.y - player.y, 2)
+                    );
+                    const playerDistB = Math.sqrt(
+                        Math.pow(b.blade.x - player.x, 2) +
+                        Math.pow(b.blade.y - player.y, 2)
+                    );
+                    return playerDistB - playerDistA; // Descending order (farthest first)
+                });
+                return similarBlades[0].blade;
             }
         }
 
-        this.targetBlade = bestBlade;
+        return scoredBlades[0].blade;
     }
 
     makeDecision(player) {
