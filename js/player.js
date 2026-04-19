@@ -19,17 +19,33 @@ class PlayerCharacter {
 
         // Input handling
         this.keys = {};
+        this.eventListeners = [];
         this.setupControls();
     }
 
     setupControls() {
-        document.addEventListener('keydown', (e) => {
+        const keydownHandler = (e) => {
             this.keys[e.key] = true;
-        });
+        };
 
-        document.addEventListener('keyup', (e) => {
+        const keyupHandler = (e) => {
             this.keys[e.key] = false;
+        };
+
+        document.addEventListener('keydown', keydownHandler);
+        document.addEventListener('keyup', keyupHandler);
+
+        // Store references for cleanup
+        this.eventListeners.push({ type: 'keydown', handler: keydownHandler });
+        this.eventListeners.push({ type: 'keyup', handler: keyupHandler });
+    }
+
+    dispose() {
+        // Remove all event listeners
+        this.eventListeners.forEach(({ type, handler }) => {
+            document.removeEventListener(type, handler);
         });
+        this.eventListeners = [];
     }
 
     update(deltaTime, worldWidth, worldHeight) {
