@@ -109,6 +109,11 @@ class PlayerCharacter {
     }
 
     drawDirectionIndicator(ctx) {
+        // Only draw direction indicator when moving
+        if (this.vx === 0 && this.vy === 0) {
+            return;
+        }
+
         // Calculate direction based on velocity
         const angle = Math.atan2(this.vy, this.vx);
         const indicatorLength = this.radius * 0.8;

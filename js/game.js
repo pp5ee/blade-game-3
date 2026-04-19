@@ -132,12 +132,17 @@ class BladeBattleGame {
     }
 
     update() {
+        // Update blades (animations)
+        for (const blade of this.blades) {
+            blade.update(this.deltaTime);
+        }
+
         // Update player
         this.player.update(this.deltaTime, this.config.worldWidth, this.config.worldHeight);
 
         // Update NPCs
         this.npcs.forEach((npc, index) => {
-            npc.update(this.deltaTime, this.player, this.config.worldWidth, this.config.worldHeight);
+            npc.update(this.deltaTime, this.player, this.blades, this.config, this.config.worldWidth, this.config.worldHeight);
 
             // Check NPC-player collisions for combat
             if (this.checkCollision(this.player, npc)) {
@@ -145,22 +150,34 @@ class BladeBattleGame {
             }
         });
 
-        // Check blade collection
-        this.blades.forEach((blade, index) => {
+        // Check blade collection (safe iteration using reverse loop)
+        for (let i = this.blades.length - 1; i >= 0; i--) {
+            const blade = this.blades[i];
+            let bladeCollected = false;
+
+            // Check player-blade collision
             if (this.checkCollision(this.player, blade)) {
                 this.player.collectBlade(blade.color);
-                this.blades.splice(index, 1);
+                bladeCollected = true;
                 this.updateUI();
             }
 
-            // Check NPC-blade collection
-            this.npcs.forEach(npc => {
-                if (this.checkCollision(npc, blade)) {
-                    npc.collectBlade(blade.color);
-                    this.blades.splice(index, 1);
+            // Check NPC-blade collision (only if blade not already collected by player)
+            if (!bladeCollected) {
+                for (const npc of this.npcs) {
+                    if (this.checkCollision(npc, blade)) {
+                        npc.collectBlade(blade.color);
+                        bladeCollected = true;
+                        break; // NPC can collect the blade
+                    }
                 }
-            });
-        });
+            }
+
+            // Remove collected blade
+            if (bladeCollected) {
+                this.blades.splice(i, 1);
+            }
+        }
     }
 
     checkCollision(entity1, entity2) {
@@ -171,20 +188,58 @@ class BladeBattleGame {
         return distance < (entity1.radius + entity2.radius);
     }
 
-    handleCombat(attacker, defender, defenderIndex) {
-        const attackerPower = this.calculateCombatPower(attacker);
-        const defenderPower = this.calculateCombatPower(defender);
+    handleCombat(entityA, entityB, defenderIndex) {
+        const powerA = this.calculateCombatPower(entityA);
+        const powerB = this.calculateCombatPower(entityB);
 
-        if (attackerPower > defenderPower * this.config.combatThreshold) {
-            // Attacker wins
-            if (attacker === this.player) {
-                // Player defeats NPC
-                this.player.collectBlades(defender.blades);
-                this.npcs.splice(defenderIndex, 1);
-                this.updateUI();
-            } else {
-                // NPC defeats player
-                this.gameOver();
+        // Determine winner based on combat power
+        if (powerA > powerB * this.config.combatThreshold) {
+            // EntityA wins
+            this.resolveCombatVictory(entityA, entityB, defenderIndex);
+        } else if (powerB > powerA * this.config.combatThreshold) {
+            // EntityB wins
+            this.resolveCombatVictory(entityB, entityA, defenderIndex);
+        }
+        // If neither has significant advantage, no combat outcome
+    }
+
+    resolveCombatVictory(winner, loser, loserIndex) {
+        // Drop loser's blades at their position
+        this.dropBladesAt(loser.x, loser.y, loser.blades);
+
+        if (loser === this.player) {
+            // Player was defeated
+            this.gameOver();
+        } else {
+            // NPC was defeated
+            this.npcs.splice(loserIndex, 1);
+            this.updateUI();
+        }
+
+        // Reset winner's blades if they were the player (for balance)
+        if (winner === this.player) {
+            // Player keeps their blades but doesn't get loser's blades directly
+            // Blades are dropped and must be collected
+        }
+    }
+
+    dropBladesAt(x, y, bladeCounts) {
+        // Drop blades as individual collectible items
+        for (const color in bladeCounts) {
+            const count = bladeCounts[color];
+            for (let i = 0; i < count; i++) {
+                // Create a small spread around the drop position
+                const spread = 30;
+                const dropX = x + (Math.random() * spread - spread / 2);
+                const dropY = y + (Math.random() * spread - spread / 2);
+
+                const blade = new Blade(
+                    dropX,
+                    dropY,
+                    8, // Smaller radius for dropped blades
+                    color
+                );
+                this.blades.push(blade);
             }
         }
     }
