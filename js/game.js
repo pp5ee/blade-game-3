@@ -8,10 +8,54 @@ class BladeBattleGame {
         this.lastTime = 0;
         this.deltaTime = 0;
 
+        // Performance tracking
+        this.frameCount = 0;
+        this.fps = 0;
+        this.lastFpsUpdate = 0;
+        this.minFps = Infinity;
+        this.maxFps = 0;
+
         // Game entities
         this.player = null;
         this.npcs = [];
         this.blades = [];
+
+        // Object pooling for Blade instances
+        this.bladePool = [];
+        this.poolSize = 50; // Maximum pool size
+
+        // Pre-populate the pool
+        this.prePopulatePool();
+    }
+
+    prePopulatePool() {
+        // Pre-create blades for the pool
+        for (let i = 0; i < this.poolSize; i++) {
+            this.bladePool.push(new Blade(0, 0, 10, 'red'));
+        }
+    }
+
+    getBladeFromPool(x, y, color) {
+        if (this.bladePool.length > 0) {
+            const blade = this.bladePool.pop();
+            blade.x = x;
+            blade.y = y;
+            blade.color = color;
+            blade.radius = 10;
+            blade.baseRadius = 10;
+            blade.pulsePhase = Math.random() * Math.PI * 2;
+            return blade;
+        }
+        // Fallback: create new blade if pool is empty
+        return new Blade(x, y, 10, color);
+    }
+
+    returnBladeToPool(blade) {
+        if (this.bladePool.length < this.poolSize) {
+            this.bladePool.push(blade);
+        }
+        // If pool is full, let the blade be garbage collected
+    }
 
         // Game configuration
         this.config = {
@@ -68,10 +112,9 @@ class BladeBattleGame {
         const colors = ['red', 'yellow', 'blue'];
         const color = colors[Math.floor(Math.random() * colors.length)];
 
-        const blade = new Blade(
+        const blade = this.getBladeFromPool(
             Math.random() * (this.config.worldWidth - 40) + 20,
             Math.random() * (this.config.worldHeight - 40) + 20,
-            10,
             color
         );
 
@@ -117,11 +160,17 @@ class BladeBattleGame {
         document.getElementById('yellow-blades').textContent = this.player.blades.yellow;
         document.getElementById('blue-blades').textContent = this.player.blades.blue;
         document.getElementById('enemy-count').textContent = this.npcs.length;
+        document.getElementById('fps').textContent = this.fps;
+        document.getElementById('min-fps').textContent = this.minFps === Infinity ? 0 : this.minFps;
+        document.getElementById('max-fps').textContent = this.maxFps;
     }
 
     gameLoop(currentTime = 0) {
         this.deltaTime = currentTime - this.lastTime;
         this.lastTime = currentTime;
+
+        // Update FPS counter
+        this.updateFPS(currentTime);
 
         if (this.gameState === 'playing') {
             this.update();
@@ -129,6 +178,22 @@ class BladeBattleGame {
         }
 
         requestAnimationFrame((time) => this.gameLoop(time));
+    }
+
+    updateFPS(currentTime) {
+        this.frameCount++;
+
+        // Update FPS every second
+        if (currentTime - this.lastFpsUpdate >= 1000) {
+            this.fps = Math.round((this.frameCount * 1000) / (currentTime - this.lastFpsUpdate));
+
+            // Track min/max FPS
+            if (this.fps < this.minFps) this.minFps = this.fps;
+            if (this.fps > this.maxFps) this.maxFps = this.fps;
+
+            this.frameCount = 0;
+            this.lastFpsUpdate = currentTime;
+        }
     }
 
     update() {
@@ -173,9 +238,10 @@ class BladeBattleGame {
                 }
             }
 
-            // Remove collected blade
+            // Remove collected blade and return to pool
             if (bladeCollected) {
-                this.blades.splice(i, 1);
+                const collectedBlade = this.blades.splice(i, 1)[0];
+                this.returnBladeToPool(collectedBlade);
             }
         }
     }
@@ -224,7 +290,7 @@ class BladeBattleGame {
     }
 
     dropBladesAt(x, y, bladeCounts) {
-        // Drop blades as individual collectible items
+        // Drop blades as individual collectible items using object pool
         for (const color in bladeCounts) {
             const count = bladeCounts[color];
             for (let i = 0; i < count; i++) {
@@ -233,12 +299,13 @@ class BladeBattleGame {
                 const dropX = x + (Math.random() * spread - spread / 2);
                 const dropY = y + (Math.random() * spread - spread / 2);
 
-                const blade = new Blade(
+                const blade = this.getBladeFromPool(
                     dropX,
                     dropY,
-                    8, // Smaller radius for dropped blades
                     color
                 );
+                blade.radius = 8; // Smaller radius for dropped blades
+                blade.baseRadius = 8;
                 this.blades.push(blade);
             }
         }

@@ -76,6 +76,14 @@ body {
     border-radius: 5px;
 }
 
+.fps-counter {
+    background: rgba(0, 255, 0, 0.3);
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    color: #90ee90;
+}
+
 .game-area {
     display: flex;
     flex-direction: column;

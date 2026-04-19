@@ -158,10 +158,60 @@ this.config = {
 - Comprehensive code comments
 
 ### Testing Strategy
-- Manual testing against acceptance criteria
-- Performance testing with multiple entities
-- Cross-browser compatibility testing
-- Responsive design validation
+
+#### Manual Acceptance Criteria Validation Checklist
+
+**AC-1: Character Movement System**
+- [ ] **Positive Test**: Use arrow keys or WASD to move character - movement should be smooth
+- [ ] **Positive Test**: Character should not move outside game boundaries (800×600 canvas)
+- [ ] **Positive Test**: Movement speed should remain consistent when switching directions
+- [ ] **Negative Test**: Character should not clip through boundaries or obstacles
+- [ ] **Negative Test**: Input should not have noticeable lag (>100ms)
+
+**AC-2: Blade Collection Mechanics**
+- [ ] **Positive Test**: Move character over blades to collect them - blade count should increase
+- [ ] **Positive Test**: Different blade colors (red/yellow/blue) should be tracked separately
+- [ ] **Positive Test**: Collected blades should disappear from the game world
+- [ ] **Negative Test**: Blades should not be collectible from a distance (requires proximity)
+- [ ] **Negative Test**: Blade count should not decrease when collecting blades
+
+**AC-3: Color-Based Combat System**
+- [ ] **Positive Test**: Red blades should provide advantage over yellow and blue (red=1.5, yellow=1.2, blue=1.0)
+- [ ] **Positive Test**: Combat outcomes should be deterministic based on blade quantities and colors
+- [ ] **Positive Test**: Defeated enemies should drop their collected blades as collectible items
+- [ ] **Negative Test**: Combat results should not be random - consistent with power calculations
+- [ ] **Negative Test**: Color advantages should not be ignored in combat resolution
+
+**AC-4: NPC Enemy Behavior**
+- [ ] **Positive Test**: NPCs should move autonomously and collect blades
+- [ ] **Positive Test**: NPCs should engage in combat when encountering player (chasing state)
+- [ ] **Positive Test**: NPCs should avoid combat when outnumbered by player (fleeing state)
+- [ ] **Positive Test**: NPCs should demonstrate strategic movement patterns (foraging, wandering)
+- [ ] **Negative Test**: NPCs should not remain stationary or move randomly without purpose
+
+**AC-5: Game State Management**
+- [ ] **Positive Test**: Game should maintain consistent state during gameplay
+- [ ] **Positive Test**: Player defeat should result in game over screen
+- [ ] **Positive Test**: Blade counts should persist correctly during combat
+- [ ] **Positive Test**: Game should be restartable after game over
+- [ ] **Negative Test**: Game state should not become corrupted during combat
+
+**AC-6: UI and Visual Presentation**
+- [ ] **Positive Test**: Game should render smoothly at 30+ FPS (check FPS counter)
+- [ ] **Positive Test**: Blade colors should be clearly distinguishable (red/yellow/blue)
+- [ ] **Positive Test**: Character and NPC sprites should be visible and distinct
+- [ ] **Positive Test**: Game interface should provide clear feedback on blade counts
+- [ ] **Negative Test**: Performance should not drop below 20 FPS with 5+ entities
+
+#### Performance Testing
+- Monitor FPS counter during gameplay with multiple NPCs and blade drops
+- Test with maximum entity counts (5 NPCs + 20+ blades)
+- Verify object pooling reduces garbage collection during heavy drop events
+
+#### Cross-Browser Compatibility
+- Test in Chrome, Firefox, Safari, and Edge
+- Verify consistent movement and rendering across browsers
+- Check responsive design on different screen sizes
 
 ### Future Enhancements
 Potential areas for future development:
