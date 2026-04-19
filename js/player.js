@@ -24,20 +24,20 @@ class PlayerCharacter {
     }
 
     setupControls() {
-        const keydownHandler = (e) => {
-            this.keys[e.key] = true;
+        const handleKey = (e, isDown) => {
+            this.keys[e.key] = isDown;
         };
 
-        const keyupHandler = (e) => {
-            this.keys[e.key] = false;
-        };
+        const keydownHandler = (e) => handleKey(e, true);
+        const keyupHandler = (e) => handleKey(e, false);
 
         document.addEventListener('keydown', keydownHandler);
         document.addEventListener('keyup', keyupHandler);
 
-        // Store references for cleanup
-        this.eventListeners.push({ type: 'keydown', handler: keydownHandler });
-        this.eventListeners.push({ type: 'keyup', handler: keyupHandler });
+        this.eventListeners.push(
+            { type: 'keydown', handler: keydownHandler },
+            { type: 'keyup', handler: keyupHandler }
+        );
     }
 
     dispose() {
@@ -55,22 +55,21 @@ class PlayerCharacter {
     }
 
     handleInput() {
-        // Reset velocity
-        this.vx = 0;
-        this.vy = 0;
+        this.vx = this.vy = 0;
 
-        // Arrow key controls
-        if (this.keys['ArrowUp'] || this.keys['w']) {
-            this.vy = -this.speed;
-        }
-        if (this.keys['ArrowDown'] || this.keys['s']) {
-            this.vy = this.speed;
-        }
-        if (this.keys['ArrowLeft'] || this.keys['a']) {
-            this.vx = -this.speed;
-        }
-        if (this.keys['ArrowRight'] || this.keys['d']) {
-            this.vx = this.speed;
+        const keyMap = {
+            'ArrowUp': () => this.vy = -this.speed,
+            'w': () => this.vy = -this.speed,
+            'ArrowDown': () => this.vy = this.speed,
+            's': () => this.vy = this.speed,
+            'ArrowLeft': () => this.vx = -this.speed,
+            'a': () => this.vx = -this.speed,
+            'ArrowRight': () => this.vx = this.speed,
+            'd': () => this.vx = this.speed
+        };
+
+        for (const key in keyMap) {
+            if (this.keys[key]) keyMap[key]();
         }
 
         // Normalize diagonal movement
@@ -125,23 +124,16 @@ class PlayerCharacter {
     }
 
     drawDirectionIndicator(ctx) {
-        // Only draw direction indicator when moving
-        if (this.vx === 0 && this.vy === 0) {
-            return;
-        }
+        if (this.vx === 0 && this.vy === 0) return;
 
-        // Calculate direction based on velocity
         const angle = Math.atan2(this.vy, this.vx);
-        const indicatorLength = this.radius * 0.8;
+        const length = this.radius * 0.8;
 
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(this.x, this.y);
-        ctx.lineTo(
-            this.x + Math.cos(angle) * indicatorLength,
-            this.y + Math.sin(angle) * indicatorLength
-        );
+        ctx.lineTo(this.x + Math.cos(angle) * length, this.y + Math.sin(angle) * length);
         ctx.stroke();
     }
 
